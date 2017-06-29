@@ -14,6 +14,19 @@
         <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
 
+    <developers>
+        <developer>
+            <name>Leon Chen</name>
+            <email>chen.bao.yi@gmail.com</email>
+            <roles>
+                <role>Developer</role>
+            </roles>
+            <timezone>+8</timezone>
+            <organization>moilioncircle</organization>
+            <organizationUrl>www.moilioncircle.com</organizationUrl>
+        </developer>
+    </developers>
+
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
