@@ -28,7 +28,7 @@ public enum TokenKind implements Predicate<TokenKind> {
     //OPERATORS
     TILDE("~", 80), PLUS("+", 50), SUB("-", 50), STAR("*", 60), SLASH("/", 60), LTEQ("<=", 40, Assoc.NONE), LT("<", 40, Assoc.NONE),
     //OTHERS
-    DOT(".", 100), MONKEYS_AT("@", 90), SEMI(";"), LBRACE("{"), RBRACE("}"), LPAREN("("), RPAREN(")"), EQGT("=>"), COL(":"), EQ("=", 40, Assoc.NONE), LTSUB("<-", 20, Assoc.RIGHT), COMMA(","),
+    DOT(".", 100), MONKEYS_AT("@", 90), SEMI(";"), LBRACE("{"), RBRACE("}"), LPAREN("("), RPAREN(")"), ARROW("=>"), COLON(":"), EQ("=", 40, Assoc.NONE), ASSIGN("<-", 20, Assoc.RIGHT), COMMA(","),
     //ERROR,EOF
     ERROR(), EOF();
     public final String name;

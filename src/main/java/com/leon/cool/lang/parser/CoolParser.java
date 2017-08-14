@@ -150,7 +150,7 @@ public class CoolParser {
                         } while (isToken(COMMA));
                         accept(RPAREN);
                     }
-                    accept(COL);
+                    accept(COLON);
                     if (token.kind == TYPE) {
                         Token returnType = token;
                         nextToken();
@@ -161,14 +161,14 @@ public class CoolParser {
                     } else {
                         syntaxError(token.kind, token.startPos, TYPE);
                     }
-                case COL:
-                    accept(COL);
+                case COLON:
+                    accept(COLON);
                     if (token.kind == TYPE) {
                         Token type = token;
                         Optional<Expression> exprOpt = Optional.empty();
                         nextToken();
-                        if (token.kind == LTSUB) {
-                            accept(LTSUB);
+                        if (token.kind == ASSIGN) {
+                            accept(ASSIGN);
                             exprOpt = Optional.of(parseExpr());
                         }
                         return f.at(id.startPos, exprOpt.isPresent() ? exprOpt.get().endPos : type.endPos).attrDef(id, type, exprOpt);
@@ -176,7 +176,7 @@ public class CoolParser {
                         syntaxError(token.kind, token.startPos, TYPE);
                     }
                 default:
-                    syntaxError(token.kind, token.startPos, COL, ID);
+                    syntaxError(token.kind, token.startPos, COLON, ID);
             }
         } else {
             syntaxError(token.kind, token.startPos, ID);
@@ -191,7 +191,7 @@ public class CoolParser {
         if (token.kind == ID) {
             Token id = token;
             nextToken();
-            accept(COL);
+            accept(COLON);
             if (token.kind == TYPE) {
                 Formal formal = f.at(id.startPos, token.endPos).formal(id, token);
                 nextToken();
@@ -290,7 +290,7 @@ public class CoolParser {
         switch (o1) {
             case MONKEYS_AT:
             case DOT:
-            case LTSUB:
+            case ASSIGN:
             case NOT:
             case ISVOID:
             case TILDE:
@@ -398,11 +398,11 @@ public class CoolParser {
                         if (token.kind == ID) {
                             Token id = token;
                             nextToken();
-                            accept(COL);
+                            accept(COLON);
                             if (token.kind == TYPE) {
                                 Token type = token;
                                 nextToken();
-                                accept(EQGT);
+                                accept(ARROW);
                                 Expression branchExpr = parseExpr();
                                 Branch branch = f.at(id.startPos, branchExpr.endPos).branch(id, type, branchExpr);
                                 branches.add(branch);
@@ -426,13 +426,13 @@ public class CoolParser {
                             if (token.kind == ID) {
                                 Token id = token;
                                 nextToken();
-                                accept(COL);
+                                accept(COLON);
                                 if (token.kind == TYPE) {
                                     Token type = token;
                                     Optional<Expression> exprOpt = Optional.empty();
                                     nextToken();
-                                    if (token.kind == LTSUB) {
-                                        accept(LTSUB);
+                                    if (token.kind == ASSIGN) {
+                                        accept(ASSIGN);
                                         exprOpt = Optional.of(parseExpr());
                                     }
                                     attrDefs.add(f.at(id.startPos, exprOpt.isPresent() ? exprOpt.get().endPos : type.endPos).letAttrDef(id, type, exprOpt));
@@ -569,9 +569,9 @@ public class CoolParser {
                 pushOp(EQ);
                 left = parseExpr(0);
                 return left;
-            case LTSUB:
-                accept(LTSUB);
-                pushOp(LTSUB);
+            case ASSIGN:
+                accept(ASSIGN);
+                pushOp(ASSIGN);
                 left = parseExpr(0);
                 return left;
             case MONKEYS_AT:
@@ -651,7 +651,7 @@ public class CoolParser {
                             }
                         }
                         break;
-                    case LTSUB:
+                    case ASSIGN:
                         Expression expr = this.getGenericElement(stack);
                         IdConst id = this.getGenericElement(stack);
                         stack.push(f.at(startPos, endPos).assign(id, expr));

@@ -186,7 +186,7 @@ public class CoolTokenizer {
                         break loop;
                     } else if (currentChar() == '-') {
                         nextChar();
-                        tk = TokenKind.LTSUB;
+                        tk = TokenKind.ASSIGN;
                         break loop;
                     } else {
                         tk = TokenKind.LT;
@@ -250,7 +250,7 @@ public class CoolTokenizer {
                     nextChar();
                     if (currentChar() == '>') {
                         nextChar();
-                        tk = TokenKind.EQGT;
+                        tk = TokenKind.ARROW;
                         break loop;
                     } else {
                         tk = TokenKind.EQ;
@@ -258,7 +258,7 @@ public class CoolTokenizer {
                     }
                 case ':':
                     nextChar();
-                    tk = TokenKind.COL;
+                    tk = TokenKind.COLON;
                     break loop;
                 case 0x1A:
                     tk = TokenKind.EOF;
