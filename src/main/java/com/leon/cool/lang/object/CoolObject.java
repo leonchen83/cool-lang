@@ -42,7 +42,7 @@ public class CoolObject {
     }
 
     public CoolObject copy() {
-        CoolObject object = coolObject();
+        var object = coolObject();
         object.type = this.type;
         object.variables = this.variables;
         return object;

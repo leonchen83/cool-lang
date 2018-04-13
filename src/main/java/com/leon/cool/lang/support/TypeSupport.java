@@ -111,10 +111,10 @@ public class TypeSupport {
         } else if (typeInfo.type() == TypeEnum.SELF_TYPE && parentTypeInfo.type() != TypeEnum.SELF_TYPE) {
             return isParent(classGraph, typeInfo.replace(), parentTypeInfo);
         } else if (typeInfo.type() != TypeEnum.SELF_TYPE && parentTypeInfo.type() != TypeEnum.SELF_TYPE) {
-            Type temp = typeInfo;
+            var temp = typeInfo;
             while (temp != null) {
                 if (temp.className().equals(parentTypeInfo.className())) return true;
-                String parentType = classGraph.get(temp.className());
+                var parentType = classGraph.get(temp.className());
                 if (parentType == null) return false;
                 temp = objectType(parentType);
             }

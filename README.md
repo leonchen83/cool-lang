@@ -1,15 +1,15 @@
 # cool-lang
 
-An interpreter of Classroom Object Oriented Language(Stanford cs143) written by Java8
+An interpreter of Classroom Object Oriented Language(Stanford cs143) written by Java10
 
 ## Requirements
 
 ```
     $java -version
-    $java version "1.8.0_20"
+    $java version "10"
 
     $mvn -version
-    $Apache Maven 3.2.3
+    $Apache Maven 3.3.1
 
 ```
 

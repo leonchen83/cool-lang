@@ -1,6 +1,10 @@
 package com.leon.cool.lang.util;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 /**
  * Copyright leon
@@ -25,16 +29,16 @@ public class FileUtil {
     }
 
     public static String readJarFile(String fileName) {
-        StringBuilder sb = new StringBuilder();
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(FileUtil.class.getClassLoader().getResourceAsStream(fileName)))) {
+        var sb = new StringBuilder();
+        try (var br = new BufferedReader(new InputStreamReader(FileUtil.class.getClassLoader().getResourceAsStream(fileName)))) {
             String line; while ((line = br.readLine()) != null) sb.append(line).append("\n");
         } catch (IOException ignore) { }
         return sb.toString();
     }
 
     public static String readFile(String fileName) {
-        StringBuilder sb = new StringBuilder();
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(fileName))))) {
+        var sb = new StringBuilder();
+        try (var br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(fileName))))) {
             String line; while ((line = br.readLine()) != null) sb.append(line).append("\n");
         } catch (IOException ignore) { }
         return sb.toString();

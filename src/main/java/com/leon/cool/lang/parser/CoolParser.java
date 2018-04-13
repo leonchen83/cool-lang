@@ -1,7 +1,15 @@
 package com.leon.cool.lang.parser;
 
 import com.leon.cool.lang.Constant;
-import com.leon.cool.lang.ast.*;
+import com.leon.cool.lang.ast.Branch;
+import com.leon.cool.lang.ast.ClassDef;
+import com.leon.cool.lang.ast.Expression;
+import com.leon.cool.lang.ast.Feature;
+import com.leon.cool.lang.ast.Formal;
+import com.leon.cool.lang.ast.IdConst;
+import com.leon.cool.lang.ast.LetAttrDef;
+import com.leon.cool.lang.ast.Program;
+import com.leon.cool.lang.ast.StaticDispatchBody;
 import com.leon.cool.lang.factory.TreeFactory;
 import com.leon.cool.lang.glossary.Assoc;
 import com.leon.cool.lang.glossary.Pos;
@@ -10,11 +18,60 @@ import com.leon.cool.lang.support.infrastructure.ClassTable;
 import com.leon.cool.lang.tokenizer.CoolScanner;
 import com.leon.cool.lang.tokenizer.Token;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 
-import static com.leon.cool.lang.glossary.TokenKind.*;
-import static com.leon.cool.lang.support.ErrorSupport.*;
+import static com.leon.cool.lang.glossary.TokenKind.ARROW;
+import static com.leon.cool.lang.glossary.TokenKind.ASSIGN;
+import static com.leon.cool.lang.glossary.TokenKind.CASE;
+import static com.leon.cool.lang.glossary.TokenKind.CLASS;
+import static com.leon.cool.lang.glossary.TokenKind.COLON;
+import static com.leon.cool.lang.glossary.TokenKind.COMMA;
+import static com.leon.cool.lang.glossary.TokenKind.DOT;
+import static com.leon.cool.lang.glossary.TokenKind.ELSE;
+import static com.leon.cool.lang.glossary.TokenKind.EOF;
+import static com.leon.cool.lang.glossary.TokenKind.EQ;
+import static com.leon.cool.lang.glossary.TokenKind.ESAC;
+import static com.leon.cool.lang.glossary.TokenKind.FALSE;
+import static com.leon.cool.lang.glossary.TokenKind.FI;
+import static com.leon.cool.lang.glossary.TokenKind.ID;
+import static com.leon.cool.lang.glossary.TokenKind.IF;
+import static com.leon.cool.lang.glossary.TokenKind.IN;
+import static com.leon.cool.lang.glossary.TokenKind.INHERITS;
+import static com.leon.cool.lang.glossary.TokenKind.INTEGER;
+import static com.leon.cool.lang.glossary.TokenKind.ISVOID;
+import static com.leon.cool.lang.glossary.TokenKind.LBRACE;
+import static com.leon.cool.lang.glossary.TokenKind.LET;
+import static com.leon.cool.lang.glossary.TokenKind.LOOP;
+import static com.leon.cool.lang.glossary.TokenKind.LPAREN;
+import static com.leon.cool.lang.glossary.TokenKind.LT;
+import static com.leon.cool.lang.glossary.TokenKind.LTEQ;
+import static com.leon.cool.lang.glossary.TokenKind.MONKEYS_AT;
+import static com.leon.cool.lang.glossary.TokenKind.NEW;
+import static com.leon.cool.lang.glossary.TokenKind.NOT;
+import static com.leon.cool.lang.glossary.TokenKind.OF;
+import static com.leon.cool.lang.glossary.TokenKind.PLUS;
+import static com.leon.cool.lang.glossary.TokenKind.POOL;
+import static com.leon.cool.lang.glossary.TokenKind.RBRACE;
+import static com.leon.cool.lang.glossary.TokenKind.RPAREN;
+import static com.leon.cool.lang.glossary.TokenKind.SEMI;
+import static com.leon.cool.lang.glossary.TokenKind.SLASH;
+import static com.leon.cool.lang.glossary.TokenKind.STAR;
+import static com.leon.cool.lang.glossary.TokenKind.STRING;
+import static com.leon.cool.lang.glossary.TokenKind.SUB;
+import static com.leon.cool.lang.glossary.TokenKind.THEN;
+import static com.leon.cool.lang.glossary.TokenKind.TILDE;
+import static com.leon.cool.lang.glossary.TokenKind.TRUE;
+import static com.leon.cool.lang.glossary.TokenKind.TYPE;
+import static com.leon.cool.lang.glossary.TokenKind.WHILE;
+import static com.leon.cool.lang.support.ErrorSupport.error;
+import static com.leon.cool.lang.support.ErrorSupport.errorMsg;
+import static com.leon.cool.lang.support.ErrorSupport.errorPos;
 import static com.leon.cool.lang.support.TypeSupport.isSelf;
 import static com.leon.cool.lang.util.StringUtil.mkString;
 
@@ -51,11 +108,11 @@ public class CoolParser {
      * program ::= [[class; ]] +
      */
     public Program parseProgram() {
-        List<ClassDef> classDefs = new ArrayList<>();
+        var classDefs = new ArrayList<ClassDef>();
         if (token.kind == EOF) {
             syntaxError(token.kind, token.startPos);
         } else {
-            Pos startPos = token.startPos;
+            var startPos = token.startPos;
             classDefs.addAll(new ClassTable().builtInClasses());
             while (true) {
                 if (token.kind == EOF) {
@@ -63,7 +120,7 @@ public class CoolParser {
                     return f.at(startPos, classDefs.get(classDefs.size() - 1).endPos).program(classDefs);
                 }
                 try {
-                    ClassDef classDef = parseClass();
+                    var classDef = parseClass();
                     classDefs.add(classDef);
                     accept(SEMI);
                 } catch (RuntimeException e) {
@@ -82,12 +139,12 @@ public class CoolParser {
      */
     private ClassDef parseClass() {
         accept(CLASS);
-        Pos startPos = scanner.prevToken().startPos;
+        var startPos = scanner.prevToken().startPos;
         if (token.kind == TYPE) {
-            Token type = token;
+            var type = token;
             nextToken();
-            Optional<Token> inheritsType = Optional.of(new Token(Constant.OBJECT, TYPE));
-            List<Feature> features = new ArrayList<>();
+            var inheritsType = Optional.of(new Token(Constant.OBJECT, TYPE));
+            var features = new ArrayList<Feature>();
             if (token.kind == INHERITS) {
                 accept(INHERITS);
                 if (token.kind == TYPE) {
@@ -108,7 +165,7 @@ public class CoolParser {
                             return f.at(startPos, scanner.prevToken().endPos).classDef(type, inheritsType, features);
                         }
                         try {
-                            Feature feature = parseFeature();
+                            var feature = parseFeature();
                             features.add(feature);
                             accept(SEMI);
                         } catch (RuntimeException e) {
@@ -135,27 +192,27 @@ public class CoolParser {
      */
     private Feature parseFeature() {
         if (token.kind == ID) {
-            Token id = token;
+            var id = token;
             nextToken();
             switch (token.kind) {
                 case LPAREN:
                     nextToken();
-                    List<Formal> formals = new ArrayList<>();
+                    var formals = new ArrayList<Formal>();
                     if (token.kind == RPAREN) {
                         accept(RPAREN);
                     } else {
                         do {
-                            Formal formal = parseFormal();
+                            var formal = parseFormal();
                             formals.add(formal);
                         } while (isToken(COMMA));
                         accept(RPAREN);
                     }
                     accept(COLON);
                     if (token.kind == TYPE) {
-                        Token returnType = token;
+                        var returnType = token;
                         nextToken();
                         accept(LBRACE);
-                        Expression expr = parseExpr();
+                        var expr = parseExpr();
                         accept(RBRACE);
                         return f.at(id.startPos, scanner.prevToken().endPos).methodDef(id, formals, returnType, expr);
                     } else {
@@ -164,8 +221,8 @@ public class CoolParser {
                 case COLON:
                     accept(COLON);
                     if (token.kind == TYPE) {
-                        Token type = token;
-                        Optional<Expression> exprOpt = Optional.empty();
+                        var type = token;
+                        var exprOpt = Optional.<Expression>empty();
                         nextToken();
                         if (token.kind == ASSIGN) {
                             accept(ASSIGN);
@@ -189,11 +246,11 @@ public class CoolParser {
      */
     private Formal parseFormal() {
         if (token.kind == ID) {
-            Token id = token;
+            var id = token;
             nextToken();
             accept(COLON);
             if (token.kind == TYPE) {
-                Formal formal = f.at(id.startPos, token.endPos).formal(id, token);
+                var formal = f.at(id.startPos, token.endPos).formal(id, token);
                 nextToken();
                 return formal;
             }
@@ -240,7 +297,7 @@ public class CoolParser {
         newSuffixExprList();
         newOpStack();
         newErrStartToken();
-        Expression expr = parseExpr(0);
+        var expr = parseExpr(0);
         suffixExprListSupply.remove(suffixExprListSupply.size() - 1);
         opStackSupply.remove(opStackSupply.size() - 1);
         errStartTokenSupply.poll();
@@ -285,7 +342,7 @@ public class CoolParser {
     }
 
     private void pushOp(TokenKind o1) {
-        Deque<TokenKind> opStack = opStackSupply.get(opStackSupply.size() - 1);
+        var opStack = opStackSupply.get(opStackSupply.size() - 1);
 
         switch (o1) {
             case MONKEYS_AT:
@@ -320,7 +377,7 @@ public class CoolParser {
 
     private Expression parseExpr(int prec) {
         Expression returnExpr = null;
-        Pos startPos = token.startPos;
+        var startPos = token.startPos;
         switch (token.kind) {
             case INTEGER:
                 Expression expr = f.at(startPos, token.endPos).intConst(token);
@@ -386,25 +443,25 @@ public class CoolParser {
                 if (peekToken(0, ESAC)) {
                     syntaxError(token.kind, token.startPos);
                 } else {
-                    List<Branch> branches = new ArrayList<>();
+                    var branches = new ArrayList<Branch>();
                     do {
                         if (token.kind == ESAC) {
                             accept(ESAC);
-                            Expression caseExpr = f.at(startPos, scanner.prevToken().endPos).caseDef(expr, branches);
+                            var caseExpr = f.at(startPos, scanner.prevToken().endPos).caseDef(expr, branches);
                             add(caseExpr);
                             returnExpr = parseExprRest(caseExpr);
                             break;
                         }
                         if (token.kind == ID) {
-                            Token id = token;
+                            var id = token;
                             nextToken();
                             accept(COLON);
                             if (token.kind == TYPE) {
-                                Token type = token;
+                                var type = token;
                                 nextToken();
                                 accept(ARROW);
-                                Expression branchExpr = parseExpr();
-                                Branch branch = f.at(id.startPos, branchExpr.endPos).branch(id, type, branchExpr);
+                                var branchExpr = parseExpr();
+                                var branch = f.at(id.startPos, branchExpr.endPos).branch(id, type, branchExpr);
                                 branches.add(branch);
                             } else {
                                 syntaxError(token.kind, token.startPos, TYPE);
@@ -420,16 +477,16 @@ public class CoolParser {
                 if (token.kind == IN) {
                     syntaxError(token.kind, token.startPos);
                 } else {
-                    List<LetAttrDef> attrDefs = new ArrayList<>();
+                    var attrDefs = new ArrayList<LetAttrDef>();
                     do {
                         try {
                             if (token.kind == ID) {
-                                Token id = token;
+                                var id = token;
                                 nextToken();
                                 accept(COLON);
                                 if (token.kind == TYPE) {
-                                    Token type = token;
-                                    Optional<Expression> exprOpt = Optional.empty();
+                                    var type = token;
+                                    var exprOpt = Optional.<Expression>empty();
                                     nextToken();
                                     if (token.kind == ASSIGN) {
                                         accept(ASSIGN);
@@ -454,14 +511,14 @@ public class CoolParser {
                 break;
             case LBRACE:
                 accept(LBRACE);
-                List<Expression> exprs = new ArrayList<>();
+                var exprs = new ArrayList<Expression>();
                 if (peekToken(0, RBRACE)) {
                     syntaxError(token.kind, token.startPos);
                 } else {
                     while (true) {
                         if (token.kind == RBRACE) {
                             accept(RBRACE);
-                            Expression blocksExpr = f.at(startPos, scanner.prevToken().endPos).blocks(exprs);
+                            var blocksExpr = f.at(startPos, scanner.prevToken().endPos).blocks(exprs);
                             add(blocksExpr);
                             returnExpr = parseExprRest(blocksExpr);
                             break;
@@ -484,9 +541,9 @@ public class CoolParser {
                 accept(WHILE);
                 expr = parseExpr();
                 accept(LOOP);
-                Expression loopExpr = parseExpr();
+                var loopExpr = parseExpr();
                 accept(POOL);
-                Expression whileExpr = f.at(startPos, scanner.prevToken().endPos).loop(expr, loopExpr);
+                var whileExpr = f.at(startPos, scanner.prevToken().endPos).loop(expr, loopExpr);
                 add(whileExpr);
                 returnExpr = parseExprRest(whileExpr);
                 break;
@@ -494,28 +551,28 @@ public class CoolParser {
                 accept(IF);
                 expr = parseExpr();
                 accept(THEN);
-                Expression thenExpr = parseExpr();
+                var thenExpr = parseExpr();
                 accept(ELSE);
-                Expression elseExpr = parseExpr();
+                var elseExpr = parseExpr();
                 accept(FI);
-                Expression ifExpr = f.at(startPos, scanner.prevToken().endPos).cond(expr, thenExpr, elseExpr);
+                var ifExpr = f.at(startPos, scanner.prevToken().endPos).cond(expr, thenExpr, elseExpr);
                 add(ifExpr);
                 returnExpr = parseExprRest(ifExpr);
                 break;
             case ID:
-                Token id = token;
+                var id = token;
                 if (peekToken(0, LPAREN)) {
                     nextToken();
                     accept(LPAREN);
-                    List<Expression> params = new ArrayList<>();
+                    var params = new ArrayList<Expression>();
                     if (token.kind != RPAREN) {
                         do {
-                            Expression param = parseExpr();
+                            var param = parseExpr();
                             params.add(param);
                         } while (isToken(COMMA));
                     }
                     accept(RPAREN);
-                    Expression dispatchExpr = f.at(id.startPos, scanner.prevToken().endPos).dispatch(id, params);
+                    var dispatchExpr = f.at(id.startPos, scanner.prevToken().endPos).dispatch(id, params);
                     add(dispatchExpr);
                     returnExpr = parseExprRest(dispatchExpr);
                 } else {
@@ -587,13 +644,13 @@ public class CoolParser {
                 if (token.kind == DOT) {
                     accept(DOT);
                     if (token.kind == ID) {
-                        Token id = token;
+                        var id = token;
                         nextToken();
                         accept(LPAREN);
-                        List<Expression> params = new ArrayList<>();
+                        var params = new ArrayList<Expression>();
                         if (token.kind != RPAREN) {
                             do {
-                                Expression param = parseExpr();
+                                var param = parseExpr();
                                 params.add(param);
                             } while (isToken(COMMA));
                         }
@@ -611,7 +668,7 @@ public class CoolParser {
             case ISVOID:
             default:
                 pushOp(token.kind);
-                List<Object> suffixExpr = suffixExprListSupply.get(opStackSupply.size() - 1);
+                var suffixExpr = suffixExprListSupply.get(opStackSupply.size() - 1);
                 errEndToken = scanner.prevToken();
                 return expr(suffixExpr);
         }
@@ -621,13 +678,13 @@ public class CoolParser {
      * Shunting yard algorithm
      */
     private Expression expr(List<Object> suffixExpr) {
-        Pos startPos = errStartTokenSupply.peek().startPos;
-        Pos endPos = errEndToken.endPos;
-        Deque<Object> stack = new LinkedList<>();
+        var startPos = errStartTokenSupply.peek().startPos;
+        var endPos = errEndToken.endPos;
+        var stack = new LinkedList<Object>();
         boolean nonAssoc = false;
-        for (int i = 0; i < suffixExpr.size(); i++) {
+        for (var i = 0; i < suffixExpr.size(); i++) {
             if (suffixExpr.get(i) instanceof TokenKind) {
-                TokenKind op = (TokenKind) suffixExpr.get(i);
+                var op = (TokenKind) suffixExpr.get(i);
                 switch (op) {
                     case MONKEYS_AT:
                         error("parser.error.unexpected.at", errorPos(errStartTokenSupply.peek().startPos, errEndToken.endPos));
@@ -741,7 +798,7 @@ public class CoolParser {
 
     private boolean errRecovery(boolean stopAtClass, boolean stopAtComma, boolean stopAtSemi, TokenKind... tks) {
         while (true) {
-            if (Arrays.asList(tks).stream().filter(e -> token.kind == e).findFirst().isPresent()) {
+            if (List.of(tks).stream().filter(e -> token.kind == e).findFirst().isPresent()) {
                 return true;
             }
             switch (token.kind) {
@@ -772,7 +829,7 @@ public class CoolParser {
 
     private boolean nextIsAt(int i, List<Object> suffixExpr) {
         if ((i + 1) < suffixExpr.size() && suffixExpr.get(i + 1) instanceof TokenKind) {
-            TokenKind op = (TokenKind) suffixExpr.get(i + 1);
+            var op = (TokenKind) suffixExpr.get(i + 1);
             if (op == MONKEYS_AT) {
                 return true;
             }

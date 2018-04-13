@@ -1,6 +1,8 @@
 package com.leon.cool.lang.object;
 
-import static com.leon.cool.lang.factory.ObjectFactory.*;
+import static com.leon.cool.lang.factory.ObjectFactory.coolInt;
+import static com.leon.cool.lang.factory.ObjectFactory.coolString;
+import static com.leon.cool.lang.factory.ObjectFactory.coolStringDefault;
 import static com.leon.cool.lang.factory.TypeFactory.stringType;
 import static com.leon.cool.lang.support.ErrorSupport.error;
 
@@ -45,7 +47,7 @@ public class CoolString extends CoolObject {
 
     public CoolString substr(CoolInt i, CoolInt l, String pos) {
         try {
-            String str = this.str.substring(i.val, i.val + l.val);
+            var str = this.str.substring(i.val, i.val + l.val);
             return coolString(str);
         } catch (StringIndexOutOfBoundsException e) {
             error("runtime.error.range", pos);

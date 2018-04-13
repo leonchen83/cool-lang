@@ -29,7 +29,7 @@ public class ParentAttrDefTreeScanner extends TreeScanner {
 
     @Override
     public void applyClassDef(ClassDef classDef) {
-        String className = classDef.type.name;
+        var className = classDef.type.name;
         treeSupport.createSymbolTable(className);
         treeSupport.lookupSymbolTable(className).enterScope();
         treeSupport.mergeAttrGraph(className);

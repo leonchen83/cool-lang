@@ -3,7 +3,10 @@ package com.leon.cool.lang.object;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
-import static com.leon.cool.lang.factory.ObjectFactory.*;
+import static com.leon.cool.lang.factory.ObjectFactory.coolInt;
+import static com.leon.cool.lang.factory.ObjectFactory.coolIntDefault;
+import static com.leon.cool.lang.factory.ObjectFactory.coolString;
+import static com.leon.cool.lang.factory.ObjectFactory.coolStringDefault;
 import static com.leon.cool.lang.factory.TypeFactory.objectType;
 import static com.leon.cool.lang.support.ErrorSupport.error;
 
@@ -40,8 +43,8 @@ public class CoolIO extends CoolObject {
     }
 
     public CoolString in_string() {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
-            String str = reader.readLine();
+        try (var reader = new BufferedReader(new InputStreamReader(System.in))) {
+            var str = reader.readLine();
             return coolString(str);
         } catch (Exception e) {
             error("unexpected.error");
@@ -50,8 +53,8 @@ public class CoolIO extends CoolObject {
     }
 
     public CoolInt in_int() {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
-            String str = reader.readLine();
+        try (var reader = new BufferedReader(new InputStreamReader(System.in))) {
+            var str = reader.readLine();
             return coolInt(Integer.parseInt(str));
         } catch (Exception e) {
             error("unexpected.error");

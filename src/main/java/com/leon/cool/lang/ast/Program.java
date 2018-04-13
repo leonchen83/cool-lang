@@ -52,7 +52,7 @@ public class Program extends TreeNode {
 
     @Override
     public CoolObject accept(EvalTreeVisitor visitor, Context context) {
-        Expression staticDispatch = new StaticDispatch(new NewDef(new Token(MAIN_CLASS, TokenKind.TYPE)), Optional.empty(), new StaticDispatchBody(new Token(MAIN_METHOD, TokenKind.ID), new ArrayList<>()));
+        var staticDispatch = new StaticDispatch(new NewDef(new Token(MAIN_CLASS, TokenKind.TYPE)), Optional.empty(), new StaticDispatchBody(new Token(MAIN_METHOD, TokenKind.ID), new ArrayList<>()));
         return staticDispatch.accept(visitor, context);
     }
 }

@@ -1,13 +1,17 @@
 package com.leon.cool.lang;
 
-import com.leon.cool.lang.ast.Program;
 import com.leon.cool.lang.factory.TreeFactory;
 import com.leon.cool.lang.parser.CoolParser;
 import com.leon.cool.lang.support.TreeSupport;
 import com.leon.cool.lang.support.infrastructure.Context;
 import com.leon.cool.lang.tokenizer.CoolScanner;
 import com.leon.cool.lang.tokenizer.CoolTokenizer;
-import com.leon.cool.lang.tree.compile.impl.*;
+import com.leon.cool.lang.tree.compile.impl.AttrDefTreeScanner;
+import com.leon.cool.lang.tree.compile.impl.ClassGraphTreeScanner;
+import com.leon.cool.lang.tree.compile.impl.MethodDefTreeScanner;
+import com.leon.cool.lang.tree.compile.impl.ParentAttrDefTreeScanner;
+import com.leon.cool.lang.tree.compile.impl.ParentMethodDefTreeScanner;
+import com.leon.cool.lang.tree.compile.impl.TypeCheckTreeScanner;
 import com.leon.cool.lang.tree.runtime.impl.EvalTreeScanner;
 
 import static com.leon.cool.lang.util.FileUtil.readFile;
@@ -32,23 +36,23 @@ import static com.leon.cool.lang.util.FileUtil.readFile;
 public class Bootstrap {
 
     public static void run(String str) {
-        try (TreeSupport treeSupport = new TreeSupport()) {
+        try (var treeSupport = new TreeSupport()) {
             //compile
-            CoolTokenizer tokenizer = new CoolTokenizer(str.toCharArray());
-            CoolScanner scanner = new CoolScanner(tokenizer);
-            CoolParser parser = new CoolParser(scanner, new TreeFactory());
-            Program expr = parser.parseProgram();
+            var tokenizer = new CoolTokenizer(str.toCharArray());
+            var scanner = new CoolScanner(tokenizer);
+            var parser = new CoolParser(scanner, new TreeFactory());
+            var expr = parser.parseProgram();
             if (!parser.errMsgs.isEmpty()) {
                 parser.errMsgs.forEach(System.err::println);
                 return;
             }
-            TypeCheckTreeScanner typeCheckTreeScanner;
             expr.accept(new ClassGraphTreeScanner(treeSupport));
             expr.accept(new MethodDefTreeScanner(treeSupport));
             expr.accept(new ParentMethodDefTreeScanner(treeSupport));
             expr.accept(new AttrDefTreeScanner(treeSupport));
             expr.accept(new ParentAttrDefTreeScanner(treeSupport));
-            expr.accept(typeCheckTreeScanner = new TypeCheckTreeScanner(treeSupport));
+            var typeCheckTreeScanner = new TypeCheckTreeScanner(treeSupport);
+            expr.accept(typeCheckTreeScanner);
             if (!typeCheckTreeScanner.errMsgs.isEmpty()) {
                 typeCheckTreeScanner.errMsgs.forEach(System.err::println);
                 return;
@@ -59,7 +63,7 @@ public class Bootstrap {
     }
 
     public static void main(String[] args) {
-        String str = readFile(args[0]);
+        var str = readFile(args[0]);
         Bootstrap.run(str);
     }
 }

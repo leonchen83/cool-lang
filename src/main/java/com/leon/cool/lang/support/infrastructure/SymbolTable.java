@@ -1,6 +1,10 @@
 package com.leon.cool.lang.support.infrastructure;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Copyright leon
@@ -48,7 +52,7 @@ public class SymbolTable<T> {
         if (tbl.isEmpty()) {
             System.out.println("lookup: no scope in symbol table.");
         }
-        for (int i = 0; i < tbl.size(); i++) {
+        for (var i = 0; i < tbl.size(); i++) {
             T info = tbl.get(i).get(sym);
             if (info != null) return Optional.of(info);
         }
@@ -59,7 +63,7 @@ public class SymbolTable<T> {
         if (tbl.isEmpty()) {
             System.out.println("lookup: no scope in symbol table.");
         }
-        for (int i = 0; i < tbl.size(); i++) {
+        for (var i = 0; i < tbl.size(); i++) {
             if (tbl.get(i).containsKey(sym)) {
                 tbl.get(i).put(sym, obj);
             }

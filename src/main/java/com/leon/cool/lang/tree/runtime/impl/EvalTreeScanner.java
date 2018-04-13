@@ -1,7 +1,34 @@
 package com.leon.cool.lang.tree.runtime.impl;
 
 import com.leon.cool.lang.Constant;
-import com.leon.cool.lang.ast.*;
+import com.leon.cool.lang.ast.Assign;
+import com.leon.cool.lang.ast.Blocks;
+import com.leon.cool.lang.ast.BoolConst;
+import com.leon.cool.lang.ast.Branch;
+import com.leon.cool.lang.ast.CaseDef;
+import com.leon.cool.lang.ast.Comp;
+import com.leon.cool.lang.ast.Cond;
+import com.leon.cool.lang.ast.Dispatch;
+import com.leon.cool.lang.ast.Divide;
+import com.leon.cool.lang.ast.IdConst;
+import com.leon.cool.lang.ast.IntConst;
+import com.leon.cool.lang.ast.IsVoid;
+import com.leon.cool.lang.ast.Let;
+import com.leon.cool.lang.ast.LetAttrDef;
+import com.leon.cool.lang.ast.Loop;
+import com.leon.cool.lang.ast.Lt;
+import com.leon.cool.lang.ast.LtEq;
+import com.leon.cool.lang.ast.Mul;
+import com.leon.cool.lang.ast.Neg;
+import com.leon.cool.lang.ast.NewDef;
+import com.leon.cool.lang.ast.NoExpression;
+import com.leon.cool.lang.ast.Not;
+import com.leon.cool.lang.ast.Paren;
+import com.leon.cool.lang.ast.Plus;
+import com.leon.cool.lang.ast.StaticDispatch;
+import com.leon.cool.lang.ast.StaticDispatchBody;
+import com.leon.cool.lang.ast.StringConst;
+import com.leon.cool.lang.ast.Sub;
 import com.leon.cool.lang.glossary.Out;
 import com.leon.cool.lang.object.CoolBool;
 import com.leon.cool.lang.object.CoolInt;
@@ -14,15 +41,23 @@ import com.leon.cool.lang.tree.runtime.EvalTreeVisitor;
 import com.leon.cool.lang.type.Type;
 import com.leon.cool.lang.type.TypeEnum;
 
-import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static com.leon.cool.lang.factory.ObjectFactory.*;
+import static com.leon.cool.lang.factory.ObjectFactory.coolBool;
+import static com.leon.cool.lang.factory.ObjectFactory.coolBoolDefault;
+import static com.leon.cool.lang.factory.ObjectFactory.coolInt;
+import static com.leon.cool.lang.factory.ObjectFactory.coolIntDefault;
+import static com.leon.cool.lang.factory.ObjectFactory.coolString;
+import static com.leon.cool.lang.factory.ObjectFactory.coolStringDefault;
+import static com.leon.cool.lang.factory.ObjectFactory.coolVoid;
 import static com.leon.cool.lang.factory.TypeFactory.objectType;
 import static com.leon.cool.lang.support.ErrorSupport.error;
 import static com.leon.cool.lang.support.ErrorSupport.errorPos;
-import static com.leon.cool.lang.support.TypeSupport.*;
+import static com.leon.cool.lang.support.TypeSupport.isBasicType;
+import static com.leon.cool.lang.support.TypeSupport.isBoolType;
+import static com.leon.cool.lang.support.TypeSupport.isIntType;
+import static com.leon.cool.lang.support.TypeSupport.isSelfType;
+import static com.leon.cool.lang.support.TypeSupport.isStringType;
 
 /**
  * Copyright leon
@@ -51,7 +86,7 @@ public class EvalTreeScanner implements EvalTreeVisitor {
 
     @Override
     public CoolObject applyAssign(Assign assign, @Out Context context) {
-        CoolObject object = assign.expr.accept(this, context);
+        var object = assign.expr.accept(this, context);
         context.environment.update(assign.id.tok.name, object);
         return object;
     }
@@ -59,7 +94,7 @@ public class EvalTreeScanner implements EvalTreeVisitor {
     @Override
     public CoolObject applyBlocks(Blocks blocks, @Out Context context) {
         CoolObject object = coolVoid();
-        for (Expression expr : blocks.exprs) {
+        for (var expr : blocks.exprs) {
             object = expr.accept(this, context);
         }
         return object;
@@ -78,14 +113,14 @@ public class EvalTreeScanner implements EvalTreeVisitor {
 
     @Override
     public CoolObject applyIsVoid(IsVoid isVoid, @Out Context context) {
-        CoolObject object = isVoid.expr.accept(this, context);
+        var object = isVoid.expr.accept(this, context);
         return coolBool(object.type.type() == TypeEnum.VOID);
     }
 
     @Override
     public CoolObject applyPlus(Plus plus, @Out Context context) {
-        CoolInt l = (CoolInt) plus.left.accept(this, context);
-        CoolInt r = (CoolInt) plus.right.accept(this, context);
+        var l = (CoolInt) plus.left.accept(this, context);
+        var r = (CoolInt) plus.right.accept(this, context);
         return coolInt(l.val + r.val);
     }
 
@@ -98,15 +133,15 @@ public class EvalTreeScanner implements EvalTreeVisitor {
 
     @Override
     public CoolObject applyMul(Mul mul, @Out Context context) {
-        CoolInt l = (CoolInt) mul.left.accept(this, context);
-        CoolInt r = (CoolInt) mul.right.accept(this, context);
+        var l = (CoolInt) mul.left.accept(this, context);
+        var r = (CoolInt) mul.right.accept(this, context);
         return coolInt(l.val * r.val);
     }
 
     @Override
     public CoolObject applyDivide(Divide divide, @Out Context context) {
-        CoolInt l = (CoolInt) divide.left.accept(this, context);
-        CoolInt r = (CoolInt) divide.right.accept(this, context);
+        var l = (CoolInt) divide.left.accept(this, context);
+        var r = (CoolInt) divide.right.accept(this, context);
         if (r.val == 0) {
             error("runtime.error.divide.zero", errorPos(divide.right));
         }
@@ -115,14 +150,14 @@ public class EvalTreeScanner implements EvalTreeVisitor {
 
     @Override
     public CoolObject applyNeg(Neg neg, @Out Context context) {
-        CoolInt val = (CoolInt) neg.expr.accept(this, context);
+        var val = (CoolInt) neg.expr.accept(this, context);
         return coolInt(-val.val);
     }
 
     @Override
     public CoolObject applyLt(Lt lt, @Out Context context) {
-        CoolInt l = (CoolInt) lt.left.accept(this, context);
-        CoolInt r = (CoolInt) lt.right.accept(this, context);
+        var l = (CoolInt) lt.left.accept(this, context);
+        var r = (CoolInt) lt.right.accept(this, context);
         if (l.val < r.val) {
             return coolBool(true);
         } else {
@@ -132,8 +167,8 @@ public class EvalTreeScanner implements EvalTreeVisitor {
 
     @Override
     public CoolObject applyLtEq(LtEq ltEq, @Out Context context) {
-        CoolInt l = (CoolInt) ltEq.left.accept(this, context);
-        CoolInt r = (CoolInt) ltEq.right.accept(this, context);
+        var l = (CoolInt) ltEq.left.accept(this, context);
+        var r = (CoolInt) ltEq.right.accept(this, context);
         if (l.val <= r.val) {
             return coolBool(true);
         } else {
@@ -143,8 +178,8 @@ public class EvalTreeScanner implements EvalTreeVisitor {
 
     @Override
     public CoolObject applyComp(Comp comp, @Out Context context) {
-        CoolObject l = comp.left.accept(this, context);
-        CoolObject r = comp.right.accept(this, context);
+        var l = comp.left.accept(this, context);
+        var r = comp.right.accept(this, context);
         if (isBasicType(l.type) && isBasicType(r.type)) {
             if (l instanceof CoolString && r instanceof CoolString) {
                 return coolBool(((CoolString) l).str.equals(((CoolString) r).str));
@@ -162,7 +197,7 @@ public class EvalTreeScanner implements EvalTreeVisitor {
 
     @Override
     public CoolObject applyNot(Not not, @Out Context context) {
-        CoolBool bool = (CoolBool) not.expr.accept(this, context);
+        var bool = (CoolBool) not.expr.accept(this, context);
         return coolBool(!bool.val);
     }
 
@@ -205,16 +240,16 @@ public class EvalTreeScanner implements EvalTreeVisitor {
         /**
          * 对方法调用的参数求值
          */
-        List<CoolObject> paramObjects = dispatch.params.stream().map(e -> e.accept(this, context)).collect(Collectors.toList());
+        var paramObjects = dispatch.params.stream().map(e -> e.accept(this, context)).collect(Collectors.toList());
         /**
          * 对上述参数表达式求得类型
          */
-        List<Type> paramTypes = paramObjects.stream().map(e -> e.type).collect(Collectors.toList());
-        CoolObject obj = context.selfObject;
+        var paramTypes = paramObjects.stream().map(e -> e.type).collect(Collectors.toList());
+        var obj = context.selfObject;
         //根据类型，方法名称，类名lookup方法声明
-        MethodDeclaration methodDeclaration = treeSupport.lookupMethodDeclaration(obj.type.className(), dispatch.id.name, paramTypes).get();
+        var methodDeclaration = treeSupport.lookupMethodDeclaration(obj.type.className(), dispatch.id.name, paramTypes).get();
 
-        CoolObject str = treeSupport.buildIn(paramObjects, obj, methodDeclaration, errorPos(dispatch.starPos, dispatch.endPos));
+        var str = treeSupport.buildIn(paramObjects, obj, methodDeclaration, errorPos(dispatch.starPos, dispatch.endPos));
         if (str != null) return str;
 
         /**
@@ -226,11 +261,11 @@ public class EvalTreeScanner implements EvalTreeVisitor {
         /**
          * 绑定形参
          */
-        for (int i = 0; i < methodDeclaration.declaration.formals.size(); i++) {
+        for (var i = 0; i < methodDeclaration.declaration.formals.size(); i++) {
             context.environment.addId(methodDeclaration.declaration.formals.get(i).id.name, paramObjects.get(i));
         }
         //对函数体求值
-        CoolObject object = methodDeclaration.declaration.expr.accept(this, context);
+        var object = methodDeclaration.declaration.expr.accept(this, context);
         /**
          * 退出scope
          */
@@ -248,14 +283,14 @@ public class EvalTreeScanner implements EvalTreeVisitor {
         /**
          * 对方法调用的参数求值
          */
-        List<CoolObject> paramObjects = staticDispatch.dispatch.params.stream().map(e -> e.accept(this, context)).collect(Collectors.toList());
+        var paramObjects = staticDispatch.dispatch.params.stream().map(e -> e.accept(this, context)).collect(Collectors.toList());
         /**
          * 对上述参数表达式求得类型
          */
-        List<Type> paramTypes = paramObjects.stream().map(e -> e.type).collect(Collectors.toList());
+        var paramTypes = paramObjects.stream().map(e -> e.type).collect(Collectors.toList());
         MethodDeclaration methodDeclaration;
         // expr[@TYPE].ID( [ expr [[, expr]] ∗ ] )对第一个expr求值
-        CoolObject obj = staticDispatch.expr.accept(this, context);
+        var obj = staticDispatch.expr.accept(this, context);
         if (obj.type.type() == TypeEnum.VOID) {
             error("runtime.error.dispatch.void", errorPos(staticDispatch.expr));
         }
@@ -267,7 +302,7 @@ public class EvalTreeScanner implements EvalTreeVisitor {
             methodDeclaration = treeSupport.lookupMethodDeclaration(obj.type.className(), staticDispatch.dispatch.id.name, paramTypes).get();
         }
 
-        CoolObject str = treeSupport.buildIn(paramObjects, obj, methodDeclaration, errorPos(staticDispatch.starPos, staticDispatch.endPos));
+        var str = treeSupport.buildIn(paramObjects, obj, methodDeclaration, errorPos(staticDispatch.starPos, staticDispatch.endPos));
         if (str != null) return str;
 
         /**
@@ -278,11 +313,11 @@ public class EvalTreeScanner implements EvalTreeVisitor {
         /**
          * 绑定形参
          */
-        for (int i = 0; i < methodDeclaration.declaration.formals.size(); i++) {
+        for (var i = 0; i < methodDeclaration.declaration.formals.size(); i++) {
             obj.variables.addId(methodDeclaration.declaration.formals.get(i).id.name, paramObjects.get(i));
         }
         //对函数体求值
-        CoolObject object = methodDeclaration.declaration.expr.accept(this, new Context(obj, obj.variables));
+        var object = methodDeclaration.declaration.expr.accept(this, new Context(obj, obj.variables));
         /**
          * 退出scope
          */
@@ -311,23 +346,23 @@ public class EvalTreeScanner implements EvalTreeVisitor {
     public CoolObject applyLet(Let let, @Out Context context) {
         context.environment.enterScope();
         let.attrDefs.forEach(e -> e.accept(this, context));
-        CoolObject object = let.expr.accept(this, context);
+        var object = let.expr.accept(this, context);
         context.environment.exitScope();
         return object;
     }
 
     @Override
     public CoolObject applyCaseDef(CaseDef caseDef, @Out Context context) {
-        CoolObject object = caseDef.caseExpr.accept(this, context);
-        String temp = object.type.className();
+        var object = caseDef.caseExpr.accept(this, context);
+        var temp = object.type.className();
         while (temp != null) {
-            final String filterStr = temp;
-            Optional<Branch> branchOpt = caseDef.branchList.stream().filter(e -> e.type.name.equals(filterStr)).findFirst();
+            final var filterStr = temp;
+            var branchOpt = caseDef.branchList.stream().filter(e -> e.type.name.equals(filterStr)).findFirst();
             if (branchOpt.isPresent()) {
-                Branch branch = branchOpt.get();
+                var branch = branchOpt.get();
                 context.environment.enterScope();
                 context.environment.addId(branch.id.name, object);
-                CoolObject returnVal = branch.expr.accept(this, context);
+                var returnVal = branch.expr.accept(this, context);
                 context.environment.exitScope();
                 if (returnVal.type.type() == TypeEnum.VOID) {
                     error("runtime.error.void", errorPos(branch.expr));

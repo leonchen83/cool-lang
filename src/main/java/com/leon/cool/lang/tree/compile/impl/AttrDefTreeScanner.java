@@ -46,7 +46,7 @@ public class AttrDefTreeScanner extends TreeScanner {
         if (isSelf(attrDef.id)) {
             error("type.error.assign.self", errorPos(attrDef.id));
         }
-        AttrDeclaration attrDeclaration = new AttrDeclaration();
+        var attrDeclaration = new AttrDeclaration();
         attrDeclaration.id = attrDef.id.name;
         attrDeclaration.type = attrDef.type.name;
         attrDeclaration.expr = attrDef.expr;

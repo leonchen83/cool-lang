@@ -19,13 +19,34 @@ import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.leon.cool.lang.factory.ObjectFactory.*;
-import static com.leon.cool.lang.factory.TypeFactory.*;
+import static com.leon.cool.lang.factory.ObjectFactory.coolBoolDefault;
+import static com.leon.cool.lang.factory.ObjectFactory.coolInt;
+import static com.leon.cool.lang.factory.ObjectFactory.coolIntDefault;
+import static com.leon.cool.lang.factory.ObjectFactory.coolObject;
+import static com.leon.cool.lang.factory.ObjectFactory.coolString;
+import static com.leon.cool.lang.factory.ObjectFactory.coolStringDefault;
+import static com.leon.cool.lang.factory.ObjectFactory.coolVoid;
+import static com.leon.cool.lang.factory.TypeFactory.noType;
+import static com.leon.cool.lang.factory.TypeFactory.objectType;
+import static com.leon.cool.lang.factory.TypeFactory.selfType;
 import static com.leon.cool.lang.support.ErrorSupport.error;
-import static com.leon.cool.lang.support.TypeSupport.*;
+import static com.leon.cool.lang.support.TypeSupport.isBoolType;
+import static com.leon.cool.lang.support.TypeSupport.isIntType;
+import static com.leon.cool.lang.support.TypeSupport.isObjectType;
+import static com.leon.cool.lang.support.TypeSupport.isParent;
+import static com.leon.cool.lang.support.TypeSupport.isStringType;
 import static com.leon.cool.lang.util.StringUtil.constructMethod;
 import static com.leon.cool.lang.util.StringUtil.mkString;
 
@@ -88,7 +109,7 @@ public class TreeSupport implements Closeable {
     }
 
     public void putToMethodGraph(String className, MethodDeclaration methodDeclaration) {
-        Set<MethodDeclaration> methodDeclarations = methodGraph.get(className);
+        var methodDeclarations = methodGraph.get(className);
         if (methodDeclarations.contains(methodDeclaration)) {
             error("global.error.method.duplicated", className, constructMethod(methodDeclaration));
         } else {
@@ -102,11 +123,11 @@ public class TreeSupport implements Closeable {
     }
 
     public void mergeMethodGraph(String className) {
-        String parentClassName = classGraph.get(className);
+        var parentClassName = classGraph.get(className);
         while (parentClassName != null) {
-            Set<MethodDeclaration> methodDeclarations = methodGraph.get(className);
-            Set<MethodDeclaration> parentDeclarations = methodGraph.get(parentClassName);
-            for (MethodDeclaration declaration : methodDeclarations) {
+            var methodDeclarations = methodGraph.get(className);
+            var parentDeclarations = methodGraph.get(parentClassName);
+            for (var declaration : methodDeclarations) {
                 parentDeclarations.forEach(e -> {
                     //仅返回类型不同的话override错误
                     if (declaration.equals(e) && !declaration.returnType.equals(e.returnType)) {
@@ -123,16 +144,16 @@ public class TreeSupport implements Closeable {
     }
 
     public void mergeAttrGraph(String className) {
-        Deque<String> inheritsLinks = new LinkedList<>();
-        String temp = className;
+        var inheritsLinks = new LinkedList<String>();
+        var temp = className;
         while (temp != null) {
             inheritsLinks.push(temp);
             temp = classGraph.get(temp);
         }
         while (!inheritsLinks.isEmpty()) {
-            String parentClassName = inheritsLinks.poll();
-            Map<String, AttrDeclaration> attrs = attrGraph.get(parentClassName);
-            for (Map.Entry<String, AttrDeclaration> attr : attrs.entrySet()) {
+            var parentClassName = inheritsLinks.poll();
+            var attrs = attrGraph.get(parentClassName);
+            for (var attr : attrs.entrySet()) {
                 //参数重定义
                 if (lookupSymbolTable(className).lookup(attr.getKey()).isPresent()) {
                     error("global.error.attr.redefined", className, attr.getKey(), parentClassName);
@@ -149,7 +170,7 @@ public class TreeSupport implements Closeable {
             // Type check for NoType.
             return Optional.empty();
         }
-        List<MethodDeclaration> list = methodGraph.get(className).stream().filter(e -> e.methodName.equals(methodName) && checkParamType(e.paramTypes, typeInfo, className)).collect(Collectors.toList());
+        var list = methodGraph.get(className).stream().filter(e -> e.methodName.equals(methodName) && checkParamType(e.paramTypes, typeInfo, className)).collect(Collectors.toList());
         if (list.isEmpty()) {
             return Optional.empty();
         } else if (list.size() > 1) {
@@ -169,7 +190,7 @@ public class TreeSupport implements Closeable {
     }
 
     public void checkUndefinedClass() {
-        Set<String> keys = classGraph.keySet();
+        var keys = classGraph.keySet();
         keys.forEach(key -> {
             if (!isObjectType(key)) {
                 if (!keys.contains(classGraph.get(key))) {
@@ -197,13 +218,13 @@ public class TreeSupport implements Closeable {
      * @return
      */
     public CoolObject newDef(EvalTreeVisitor visitor, Type type, Context context) {
-        CoolObject object = coolObject();
+        var object = coolObject();
         object.type = type;
 
         object.variables.enterScope();
 
-        Deque<String> inheritsLinks = new LinkedList<>();
-        String temp = type.className();
+        var inheritsLinks = new LinkedList<String>();
+        var temp = type.className();
         while (temp != null) {
             inheritsLinks.push(temp);
             temp = classGraph.get(temp);
@@ -218,9 +239,9 @@ public class TreeSupport implements Closeable {
          * Object = void
          */
         while (!inheritsLinks.isEmpty()) {
-            String parentClassName = inheritsLinks.poll();
-            Map<String, AttrDeclaration> attrs = attrGraph.getOrDefault(parentClassName, Collections.emptyMap());
-            for (Map.Entry<String, AttrDeclaration> attr : attrs.entrySet()) {
+            var parentClassName = inheritsLinks.poll();
+            var attrs = attrGraph.getOrDefault(parentClassName, Collections.emptyMap());
+            for (var attr : attrs.entrySet()) {
                 if (isStringType(attr.getValue().type)) {
                     object.variables.addId(attr.getKey(), coolStringDefault());
                 } else if (isBoolType(attr.getValue().type)) {
@@ -268,7 +289,7 @@ public class TreeSupport implements Closeable {
                     return obj;
                 } else if (methodDeclaration.methodName.equals("in_string")) {
                     try {
-                        String str = reader().readLine();
+                        var str = reader().readLine();
                         return coolString(str);
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -277,7 +298,7 @@ public class TreeSupport implements Closeable {
                     return coolStringDefault();
                 } else if (methodDeclaration.methodName.equals("in_int")) {
                     try {
-                        String str = reader().readLine();
+                        var str = reader().readLine();
                         return coolInt(Integer.parseInt(str));
                     } catch (Exception e) {
                         error("unexpected.error");
@@ -322,14 +343,14 @@ public class TreeSupport implements Closeable {
     }
 
     private Type lub(Type type1, Type type2) {
-        List<String> list1 = new ArrayList<>();
+        var list1 = new ArrayList<String>();
         list1.add(type1.className());
-        String temp = type1.className();
+        var temp = type1.className();
         while (temp != null) {
             temp = classGraph.get(temp);
             list1.add(temp);
         }
-        List<String> list2 = new ArrayList<>();
+        var list2 = new ArrayList<String>();
         list2.add(type2.className());
         temp = type2.className();
         while (temp != null) {
@@ -353,22 +374,22 @@ public class TreeSupport implements Closeable {
      */
     private void gc(Context context) {
         if (heap.size() < Constant.GC_HEAP_SIZE) return;
-        SymbolTable<CoolObject> environment = context.environment;
+        var environment = context.environment;
 
         //Mark
-        List<CoolObject> rootObjects = new ArrayList<>();
-        for (int i = 0; i < environment.size(); i++) {
+        var rootObjects = new ArrayList<CoolObject>();
+        for (var i = 0; i < environment.size(); i++) {
             rootObjects.addAll(environment.elementAt(i).values().stream().filter(e -> isObjectType(e.type)).collect(Collectors.toList()));
         }
 
         while (!rootObjects.isEmpty()) {
-            CoolObject obj = rootObjects.remove(0);
+            var obj = rootObjects.remove(0);
             heap.canReach(obj);
-            SymbolTable<CoolObject> variables = obj.variables;
+            var variables = obj.variables;
             if (variables == null) continue;
             for (int i = 0; i < variables.size(); i++) {
-                Collection<CoolObject> values = variables.elementAt(i).values();
-                for (CoolObject variable : values) {
+                var values = variables.elementAt(i).values();
+                for (var variable : values) {
                     //防止循环引用
                     if (isObjectType(variable.type) && !heap.isReach(variable)) {
                         rootObjects.add(variable);
@@ -388,16 +409,16 @@ public class TreeSupport implements Closeable {
      * 对有表达式的属性求值，并更新对象变量表，没有表达式的属性会在newDef中赋初值。
      */
     private void initializer(EvalTreeVisitor visitor, CoolObject object) {
-        Deque<String> inheritsLinks = new LinkedList<>();
-        String temp = object.type.className();
+        var inheritsLinks = new LinkedList<String>();
+        var temp = object.type.className();
         while (temp != null) {
             inheritsLinks.push(temp);
             temp = classGraph.get(temp);
         }
-        Context context = new Context(object, object.variables);
+        var context = new Context(object, object.variables);
         while (!inheritsLinks.isEmpty()) {
-            String parentClassName = inheritsLinks.poll();
-            Map<String, AttrDeclaration> attrs = attrGraph.getOrDefault(parentClassName, Collections.emptyMap());
+            var parentClassName = inheritsLinks.poll();
+            var attrs = attrGraph.getOrDefault(parentClassName, Collections.emptyMap());
             attrs.entrySet().forEach(attr -> {
                 if (attr.getValue().expr.isPresent()) {
                     object.variables.addId(attr.getKey(), attr.getValue().expr.get().accept(visitor, context));
@@ -407,19 +428,19 @@ public class TreeSupport implements Closeable {
     }
 
     private Optional<MethodDeclaration> minimumMethodDeclaration(List<MethodDeclaration> list, String className, List<Type> typeInfo) {
-        MethodDeclaration min = new MethodDeclaration();
+        var min = new MethodDeclaration();
         min.paramTypes = typeInfo.stream().map(e -> Constant.OBJECT).collect(Collectors.toList());
         label:
-        for (MethodDeclaration declaration : list) {
-            for (int i = 0; i < declaration.paramTypes.size(); i++) {
+        for (var declaration : list) {
+            for (var i = 0; i < declaration.paramTypes.size(); i++) {
                 if (!isParent(classGraph, objectType(declaration.paramTypes.get(i), className), objectType(min.paramTypes.get(i), className))) {
                     continue label;
                 }
             }
             min = declaration;
         }
-        for (MethodDeclaration declaration : list) {
-            for (int i = 0; i < declaration.paramTypes.size(); i++) {
+        for (var declaration : list) {
+            for (var i = 0; i < declaration.paramTypes.size(); i++) {
                 if (!isParent(classGraph, objectType(min.paramTypes.get(i), className), objectType(declaration.paramTypes.get(i), className))) {
                     error("global.error.overload", className, mkString(list.stream().map(StringUtil::constructMethod).collect(Collectors.toList()), "[", ",", "]"));
                     return Optional.empty();
@@ -430,9 +451,9 @@ public class TreeSupport implements Closeable {
     }
 
     private void checkCircleInherits(Map<String, String> classGraph) {
-        Set<String> keys = classGraph.keySet();
-        for (String key : keys) {
-            String parent = classGraph.get(key);
+        var keys = classGraph.keySet();
+        for (var key : keys) {
+            var parent = classGraph.get(key);
             while (parent != null && !parent.equals(key)) {
                 parent = classGraph.get(parent);
             }
@@ -446,7 +467,7 @@ public class TreeSupport implements Closeable {
         if (paramTypes.size() != typeInfos.size()) {
             return false;
         } else {
-            for (int i = 0; i < typeInfos.size(); i++) {
+            for (var i = 0; i < typeInfos.size(); i++) {
                 if (!isParent(classGraph, typeInfos.get(i), objectType(paramTypes.get(i), className))) {
                     return false;
                 }

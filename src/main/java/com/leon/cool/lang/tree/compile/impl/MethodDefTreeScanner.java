@@ -48,7 +48,7 @@ public class MethodDefTreeScanner extends TreeScanner {
         if (isTypeDefined(treeSupport.classGraph, methodDef.type)) {
             error("type.error.undefined", methodDef.type.name, errorPos(methodDef.type));
         }
-        MethodDeclaration methodDeclaration = new MethodDeclaration();
+        var methodDeclaration = new MethodDeclaration();
         methodDeclaration.methodName = methodDef.id.name;
         methodDeclaration.returnType = methodDef.type.name;
         methodDeclaration.paramTypes = methodDef.formals.stream().map(e -> {

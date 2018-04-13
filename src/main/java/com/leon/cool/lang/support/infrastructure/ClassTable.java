@@ -5,7 +5,11 @@ import com.leon.cool.lang.ast.Feature;
 import com.leon.cool.lang.factory.TreeFactory;
 import com.leon.cool.lang.tokenizer.Token;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 import static com.leon.cool.lang.glossary.TokenKind.ID;
 import static com.leon.cool.lang.glossary.TokenKind.TYPE;
@@ -58,8 +62,8 @@ public class ClassTable {
      */
     @SuppressWarnings("unchecked")
     public List<ClassDef> builtInClasses() {
-        List<ClassDef> classDefs = new ArrayList<>();
-        List<Feature> features = new ArrayList<>();
+        var classDefs = new ArrayList<ClassDef>();
+        var features = new ArrayList<Feature>();
         features.add(f.methodDef(new Token("abort", ID), Collections.EMPTY_LIST, new Token("Object", TYPE), f.noExpression()));
         features.add(f.methodDef(new Token("type_name", ID), Collections.EMPTY_LIST, new Token("String", TYPE), f.noExpression()));
         features.add(f.methodDef(new Token("copy", ID), Collections.EMPTY_LIST, new Token("SELF_TYPE", TYPE), f.noExpression()));

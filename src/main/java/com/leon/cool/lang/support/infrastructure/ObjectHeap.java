@@ -4,7 +4,6 @@ import com.leon.cool.lang.object.CoolObject;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -55,7 +54,7 @@ public class ObjectHeap {
      */
     public void clearUnreachable() {
         LOGGER.info("*Mark-Sweep GC* total object size:" + heap.size());
-        Set<Map.Entry<CoolObject, Boolean>> sets = heap.entrySet().stream().filter(Map.Entry::getValue).collect(Collectors.toSet());
+        var sets = heap.entrySet().stream().filter(Map.Entry::getValue).collect(Collectors.toSet());
         LOGGER.info("*Mark-Sweep GC* reachable object size:" + sets.size());
         heap = new HashMap<>();
         sets.stream().forEach(e -> heap.put(e.getKey(), false));

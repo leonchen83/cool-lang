@@ -5,7 +5,6 @@ import com.leon.cool.lang.glossary.Pos;
 import com.leon.cool.lang.tokenizer.Token;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.MessageFormat;
 import java.util.Properties;
 
@@ -31,7 +30,7 @@ public class ErrorSupport {
     private static final Properties messages = new Properties();
 
     static {
-        try (InputStream stream = TreeSupport.class.getClassLoader().getResourceAsStream("messages.properties")) {
+        try (var stream = TreeSupport.class.getClassLoader().getResourceAsStream("messages.properties")) {
             messages.load(stream);
         } catch (IOException ignore) { }
     }

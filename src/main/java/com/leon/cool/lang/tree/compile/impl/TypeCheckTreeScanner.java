@@ -1,24 +1,61 @@
 package com.leon.cool.lang.tree.compile.impl;
 
 import com.leon.cool.lang.Constant;
-import com.leon.cool.lang.ast.*;
+import com.leon.cool.lang.ast.Assign;
+import com.leon.cool.lang.ast.AttrDef;
+import com.leon.cool.lang.ast.Blocks;
+import com.leon.cool.lang.ast.BoolConst;
+import com.leon.cool.lang.ast.Branch;
+import com.leon.cool.lang.ast.CaseDef;
+import com.leon.cool.lang.ast.ClassDef;
+import com.leon.cool.lang.ast.Comp;
+import com.leon.cool.lang.ast.Cond;
+import com.leon.cool.lang.ast.Dispatch;
+import com.leon.cool.lang.ast.Divide;
+import com.leon.cool.lang.ast.Formal;
+import com.leon.cool.lang.ast.IdConst;
+import com.leon.cool.lang.ast.IntConst;
+import com.leon.cool.lang.ast.IsVoid;
+import com.leon.cool.lang.ast.Let;
+import com.leon.cool.lang.ast.LetAttrDef;
+import com.leon.cool.lang.ast.Loop;
+import com.leon.cool.lang.ast.Lt;
+import com.leon.cool.lang.ast.LtEq;
+import com.leon.cool.lang.ast.MethodDef;
+import com.leon.cool.lang.ast.Mul;
+import com.leon.cool.lang.ast.Neg;
+import com.leon.cool.lang.ast.NewDef;
+import com.leon.cool.lang.ast.NoExpression;
+import com.leon.cool.lang.ast.Not;
+import com.leon.cool.lang.ast.Paren;
+import com.leon.cool.lang.ast.Plus;
+import com.leon.cool.lang.ast.Program;
+import com.leon.cool.lang.ast.StaticDispatch;
+import com.leon.cool.lang.ast.StaticDispatchBody;
+import com.leon.cool.lang.ast.StringConst;
+import com.leon.cool.lang.ast.Sub;
 import com.leon.cool.lang.support.TreeSupport;
-import com.leon.cool.lang.support.declaration.MethodDeclaration;
 import com.leon.cool.lang.tokenizer.Token;
 import com.leon.cool.lang.tree.compile.TreeScanner;
-import com.leon.cool.lang.type.Type;
 import com.leon.cool.lang.type.TypeEnum;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static com.leon.cool.lang.factory.TypeFactory.*;
+import static com.leon.cool.lang.factory.TypeFactory.booleanType;
+import static com.leon.cool.lang.factory.TypeFactory.integerType;
+import static com.leon.cool.lang.factory.TypeFactory.noType;
+import static com.leon.cool.lang.factory.TypeFactory.objectType;
+import static com.leon.cool.lang.factory.TypeFactory.stringType;
 import static com.leon.cool.lang.support.ErrorSupport.errorMsg;
 import static com.leon.cool.lang.support.ErrorSupport.errorPos;
-import static com.leon.cool.lang.support.TypeSupport.*;
+import static com.leon.cool.lang.support.TypeSupport.isBasicType;
+import static com.leon.cool.lang.support.TypeSupport.isParent;
+import static com.leon.cool.lang.support.TypeSupport.isSelf;
+import static com.leon.cool.lang.support.TypeSupport.isSelfType;
+import static com.leon.cool.lang.support.TypeSupport.isTypeDefined;
 import static com.leon.cool.lang.util.StringUtil.constructMethod;
 
 /**
@@ -68,11 +105,11 @@ public class TypeCheckTreeScanner extends TreeScanner {
     @Override
     public void applyStaticDispatch(StaticDispatch staticDispatch) {
         super.applyStaticDispatch(staticDispatch);
-        List<Type> paramsTypes = staticDispatch.dispatch.params.stream().map(e -> e.typeInfo).collect(Collectors.toList());
+        var paramsTypes = staticDispatch.dispatch.params.stream().map(e -> e.typeInfo).collect(Collectors.toList());
         if (!staticDispatch.type.isPresent()) {
-            Optional<MethodDeclaration> methodDeclaration = treeSupport.lookupMethodDeclaration(staticDispatch.expr.typeInfo.replace().className(), staticDispatch.dispatch.id.name, paramsTypes);
+            var methodDeclaration = treeSupport.lookupMethodDeclaration(staticDispatch.expr.typeInfo.replace().className(), staticDispatch.dispatch.id.name, paramsTypes);
             if (!methodDeclaration.isPresent()) {
-                String method = constructMethod(staticDispatch.dispatch.id.name, paramsTypes.stream().map(Object::toString).collect(Collectors.toList()));
+                var method = constructMethod(staticDispatch.dispatch.id.name, paramsTypes.stream().map(Object::toString).collect(Collectors.toList()));
                 reportTypeCheckError("type.error.method.undefined", staticDispatch.expr.typeInfo.replace().className(), method, errorPos(staticDispatch.dispatch.id));
                 staticDispatch.typeInfo = noType();
             } else {
@@ -83,14 +120,14 @@ public class TypeCheckTreeScanner extends TreeScanner {
                 }
             }
         } else {
-            Type type = objectType(staticDispatch.type.get().name, className);
+            var type = objectType(staticDispatch.type.get().name, className);
             if (!isParent(treeSupport.classGraph, staticDispatch.expr.typeInfo, type)) {
                 reportTypeCheckError("type.error.subclass", staticDispatch.expr.typeInfo.toString(), type.toString(), errorPos(staticDispatch.type.get()));
                 staticDispatch.typeInfo = noType();
             } else {
-                Optional<MethodDeclaration> methodDeclaration = treeSupport.lookupMethodDeclaration(type.className(), staticDispatch.dispatch.id.name, paramsTypes);
+                var methodDeclaration = treeSupport.lookupMethodDeclaration(type.className(), staticDispatch.dispatch.id.name, paramsTypes);
                 if (!methodDeclaration.isPresent()) {
-                    String method = constructMethod(staticDispatch.dispatch.id.name, paramsTypes.stream().map(Object::toString).collect(Collectors.toList()));
+                    var method = constructMethod(staticDispatch.dispatch.id.name, paramsTypes.stream().map(Object::toString).collect(Collectors.toList()));
                     reportTypeCheckError("type.error.method.undefined", type.className(), method, errorPos(staticDispatch.dispatch.id));
                     staticDispatch.typeInfo = noType();
                 } else {
@@ -112,10 +149,10 @@ public class TypeCheckTreeScanner extends TreeScanner {
     @Override
     public void applyDispatch(Dispatch dispatch) {
         super.applyDispatch(dispatch);
-        List<Type> paramsTypes = dispatch.params.stream().map(e -> e.typeInfo).collect(Collectors.toList());
-        Optional<MethodDeclaration> methodDeclaration = treeSupport.lookupMethodDeclaration(className, dispatch.id.name, paramsTypes);
+        var paramsTypes = dispatch.params.stream().map(e -> e.typeInfo).collect(Collectors.toList());
+        var methodDeclaration = treeSupport.lookupMethodDeclaration(className, dispatch.id.name, paramsTypes);
         if (!methodDeclaration.isPresent()) {
-            String method = constructMethod(dispatch.id.name, paramsTypes.stream().map(Object::toString).collect(Collectors.toList()));
+            var method = constructMethod(dispatch.id.name, paramsTypes.stream().map(Object::toString).collect(Collectors.toList()));
             reportTypeCheckError("type.error.method.undefined", className, method, errorPos(dispatch.id));
             dispatch.typeInfo = noType();
         } else {
@@ -125,7 +162,7 @@ public class TypeCheckTreeScanner extends TreeScanner {
 
     @Override
     public void applyCaseDef(CaseDef caseDef) {
-        int size = caseDef.branchList.stream().map(e -> {
+        var size = caseDef.branchList.stream().map(e -> {
             if (isSelf(e.id)) {
                 reportTypeCheckError("type.error.bind.self", errorPos(e.id));
             }
@@ -171,8 +208,8 @@ public class TypeCheckTreeScanner extends TreeScanner {
     public void applyAttrDef(AttrDef attrDef) {
         super.applyAttrDef(attrDef);
         if (attrDef.expr.isPresent()) {
-            Type t0 = objectType(treeSupport.lookupSymbolTable(className).lookup(attrDef.id.name).get(), className);
-            Type t1 = attrDef.expr.get().typeInfo;
+            var t0 = objectType(treeSupport.lookupSymbolTable(className).lookup(attrDef.id.name).get(), className);
+            var t1 = attrDef.expr.get().typeInfo;
             if (!isParent(treeSupport.classGraph, t1, t0)) {
                 reportTypeCheckError("type.error.subclass", t1.toString(), t0.toString(), errorPos(attrDef));
             }
@@ -194,7 +231,7 @@ public class TypeCheckTreeScanner extends TreeScanner {
             reportTypeCheckError("type.error.bind.self", errorPos(letAttrDef.id));
         }
         if (letAttrDef.expr.isPresent()) {
-            Type t0 = objectType(letAttrDef.type.name, className);
+            var t0 = objectType(letAttrDef.type.name, className);
             if (!isParent(treeSupport.classGraph, letAttrDef.expr.get().typeInfo, t0)) {
                 reportTypeCheckError("type.error.subclass", letAttrDef.expr.get().typeInfo.toString(), t0.toString(), errorPos(letAttrDef));
             }
@@ -386,9 +423,9 @@ public class TypeCheckTreeScanner extends TreeScanner {
 
     @Override
     public void applyIdConst(IdConst idConst) {
-        Optional<String> type = treeSupport.lookupSymbolTable(className).lookup(idConst.tok.name);
+        var type = treeSupport.lookupSymbolTable(className).lookup(idConst.tok.name);
         if (type.isPresent()) {
-            String typeStr = type.get();
+            var typeStr = type.get();
             if (!isTypeDefined(treeSupport.classGraph, typeStr)) {
                 reportTypeCheckError("type.error.type.undefined", className, typeStr, errorPos(idConst));
                 idConst.typeInfo = noType();

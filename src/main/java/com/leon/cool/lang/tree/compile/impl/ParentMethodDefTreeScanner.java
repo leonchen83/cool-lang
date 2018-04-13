@@ -29,7 +29,7 @@ public class ParentMethodDefTreeScanner extends TreeScanner {
 
     @Override
     public void applyClassDef(ClassDef classDef) {
-        String className = classDef.type.name;
+        var className = classDef.type.name;
         treeSupport.mergeMethodGraph(className);
         super.applyClassDef(classDef);
     }

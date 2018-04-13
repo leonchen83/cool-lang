@@ -49,7 +49,7 @@ public class CoolScanner {
 
     //where
     private void ensureLookahead(int lookahead) {
-        for (int i = savedTokens.size(); i < lookahead; i++) {
+        for (var i = savedTokens.size(); i < lookahead; i++) {
             savedTokens.add(tokenizer.readToken());
         }
     }

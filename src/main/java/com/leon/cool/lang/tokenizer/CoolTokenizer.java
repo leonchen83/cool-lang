@@ -271,7 +271,7 @@ public class CoolTokenizer {
         if (tk.tag == TokenTag.DEFAULT) {
             return new Token(tk.name, tk, startPos);
         } else if (tk.tag == TokenTag.NAME || tk.tag == TokenTag.TYPE) {
-            Token token = lookup(getName(name));
+            var token = lookup(getName(name));
             if (token != null) {
                 return token;
             } else {
@@ -353,7 +353,7 @@ public class CoolTokenizer {
     private void scanID() {
         name = new ArrayList<>();
         startPos = new Pos(column, row);
-        char ch = currentChar();
+        var ch = currentChar();
         putChar(ch);
         while (true) {
             ch = nextChar();
@@ -463,7 +463,7 @@ public class CoolTokenizer {
     }
 
     public Token lookup(String name) {
-        for (TokenKind key : keys) {
+        for (var key : keys) {
             if (key.name.equals(name.toLowerCase())) {
                 if (key.name.equals(Constant.TRUE) || key.name.equals(Constant.FALSE)) {
                     if (name.charAt(0) == 't' || name.charAt(0) == 'f') {
@@ -481,7 +481,7 @@ public class CoolTokenizer {
 
     public String getName(List<Character> name) {
         char[] chs = new char[name.size()];
-        for (int i = 0; i < name.size(); i++) {
+        for (var i = 0; i < name.size(); i++) {
             chs[i] = name.get(i);
         }
         return new String(chs);
